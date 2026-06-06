@@ -220,7 +220,7 @@ function wire(){
     const c=e.currentTarget,q=c.dataset.q; state[q]=c.dataset.v;
     c.parentElement.querySelectorAll('.az-opt').forEach(o=>o.classList.remove('sel'));
     c.classList.add('sel'); clearHint(q); saveProgress();
-    if(q==="q11") render();
+    if(q==="q11"||q==="q13") render();
   }));
 
   root.querySelectorAll('.az-sbtn[data-scale]').forEach(el=>el.addEventListener('click',e=>{
