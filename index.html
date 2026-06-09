@@ -137,6 +137,8 @@ const SECTIONS=[
  {n:3,title:"Overall Experience",q:[
    {id:"q15",n:15,type:"scale",min:0,max:10,low:"Not at all satisfied",high:"Extremely satisfied",req:true,label:"Overall, how satisfied are you with living in Azure?"},
    {id:"q16",n:16,type:"scale",min:0,max:10,low:"Not at all likely",high:"Extremely likely",req:true,label:"How likely are you to recommend Azure to others?"},
+   {id:"q16b",n:"16b",type:"radio",req:true,label:"Which area most affected your score?",opts:["Maintenance and repairs","Cleanliness of common areas","Customer service / staff responsiveness","Communication from management","Amenities and facilities","Security and safety","Value for money","Digital services (app / AI Concierge)","Other"],showIf:s=>s.q16!=null&&s.q16!==""&&Number(s.q16)<=8},
+   {id:"q16c",n:"16c",type:"longtext",req:false,label:"Anything else you'd like to share?",showIf:s=>s.q16!=null&&s.q16!==""&&Number(s.q16)<=8},
  ]},
  {n:4,title:"In-Compound Commercial Services & Amenities",intro:"Please rate the amenities below. If you do not use an amenity, select N/A.",q:[
    {id:"q17",n:17,type:"matrix",req:true,label:"Restaurant",rows:["Food quality","Cleanliness and hygiene standards","Pricing and value for money"]},
@@ -228,6 +230,7 @@ function wire(){
     const c=e.currentTarget,q=c.dataset.scale; state[q]=c.dataset.v;
     c.parentElement.querySelectorAll('.az-sbtn').forEach(b=>b.classList.remove('sel'));
     c.classList.add('sel'); clearHint(q); saveProgress();
+    if(q==="q16") render();
   }));
 
   root.querySelectorAll('.az-seg[data-seg]').forEach(el=>el.addEventListener('click',e=>{
