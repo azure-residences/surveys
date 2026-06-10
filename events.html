@@ -303,9 +303,10 @@ function currentWave(){ const d=new Date();
   if(WAVE_MODE==="half") return d.getFullYear()+"-H"+(d.getMonth()<6?1:2);
   if(WAVE_MODE==="year") return "Events-"+d.getFullYear();
   return "Rolling"; }
+let OPEN_FROM_EFF=OPEN_FROM, OPEN_UNTIL_EFF=OPEN_UNTIL;
 function isOpen(){ const n=new Date();
-  if(OPEN_FROM && n<new Date(OPEN_FROM+"T00:00:00")) return false;
-  if(OPEN_UNTIL && n>new Date(OPEN_UNTIL+"T23:59:59")) return false;
+  if(OPEN_FROM_EFF && n<new Date(OPEN_FROM_EFF+"T00:00:00")) return false;
+  if(OPEN_UNTIL_EFF && n>new Date(OPEN_UNTIL_EFF+"T23:59:59")) return false;
   return true; }
 function renderClosed(){ root.innerHTML=`
    <div class="az-stage"><div class="az-shell">
@@ -342,6 +343,18 @@ function success(){
 }
 
 try{ loadProgress(); }catch(e){}
-if(isOpen()) render(); else renderClosed();
+function __start(){ if(isOpen()) render(); else renderClosed(); }
+(function(){
+  try{ root.innerHTML='<div style="padding:64px 20px;text-align:center;color:#7c93a3;font:16px system-ui,sans-serif">Loading\u2026</div>'; }catch(e){}
+  var started=false, go=function(){ if(started)return; started=true; __start(); };
+  try{
+    var cb='__cfg'+Math.random().toString(36).slice(2);
+    window[cb]=function(r){ try{ if(r&&r.ok){ OPEN_FROM_EFF=r.openFrom||null; OPEN_UNTIL_EFF=r.openUntil||null; } }catch(e){} try{delete window[cb];}catch(_){ } go(); };
+    var sc=document.createElement('script');
+    sc.src=ENDPOINT+'?config=1&survey='+encodeURIComponent(SURVEY_TYPE)+'&callback='+cb;
+    sc.onerror=go; document.head.appendChild(sc);
+    setTimeout(go,2500);
+  }catch(e){ go(); }
+})();
 </script>
 <input id="az_hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;">
