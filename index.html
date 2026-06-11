@@ -95,6 +95,13 @@
     .az-hero h1{font-size:25px;}
     .az-segs{grid-template-columns:repeat(6,1fr);}
   }
+  .az-chk{display:flex;align-items:center;gap:12px;border:1.5px solid var(--az-line);border-radius:12px;padding:14px 15px;margin-bottom:9px;cursor:pointer;background:#fbfcfd;transition:.15s;font-size:14.5px;line-height:1.35;}
+  .az-chk:active{transform:scale(.99);}
+  .az-chk.sel{border-color:var(--az-dark);border-width:2px;background:rgba(64,150,202,.1);font-weight:700;}
+  .az-chk .box{width:20px;height:20px;border-radius:6px;border:2px solid #b7c8ce;flex:none;display:flex;align-items:center;justify-content:center;transition:.15s;font-size:13px;color:#fff;}
+  .az-chk.sel .box{border-color:var(--az-dark);background:var(--az-dark);}
+  .az-chk.sel .box::after{content:"\2713";font-weight:900;}
+  .az-chkmax{font-size:11.5px;color:var(--az-muted);margin-top:2px;}
 </style>
 
 <script>
@@ -137,7 +144,7 @@ const SECTIONS=[
  {n:3,title:"Overall Experience",q:[
    {id:"q15",n:15,type:"scale",min:0,max:10,low:"Not at all satisfied",high:"Extremely satisfied",req:true,label:"Overall, how satisfied are you with living in Azure?"},
    {id:"q16",n:16,type:"scale",min:0,max:10,low:"Not at all likely",high:"Extremely likely",req:true,label:"How likely are you to recommend Azure to others?"},
-   {id:"q16b",n:"16b",type:"radio",req:true,label:"Which area most affected your score?",opts:["Maintenance and repairs","Cleanliness of common areas","Customer service / staff responsiveness","Communication from management","Amenities and facilities","Security and safety","Value for money","Digital services (app / AI Concierge)","Other"],showIf:s=>s.q16!=null&&s.q16!==""&&Number(s.q16)<=8},
+   {id:"q16b",n:"16b",type:"checks",req:false,max:2,label:"Which area(s) most affected your score? (up to 2)",opts:["Maintenance and repairs","Cleanliness of common areas","Customer service / staff responsiveness","Communication from management","Amenities and facilities","Security and safety","Value for money","Digital services (app / AI Concierge)","Other"],showIf:s=>s.q16!=null&&s.q16!==""&&Number(s.q16)<=8},
    {id:"q16c",n:"16c",type:"longtext",req:false,label:"Anything else you'd like to share?",showIf:s=>s.q16!=null&&s.q16!==""&&Number(s.q16)<=8},
  ]},
  {n:4,title:"In-Compound Commercial Services & Amenities",intro:"Please rate the amenities below. If you do not use an amenity, select N/A.",q:[
@@ -167,6 +174,7 @@ function saveProgress(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify({step
 function loadProgress(){ try{ const r=localStorage.getItem(SAVE_KEY); if(!r)return; const d=JSON.parse(r); if(d&&d.state){ Object.assign(state,d.state); step=Math.min(d.step||0,SECTIONS.length-1);} }catch(e){} }
 function clearProgress(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
 
+function findQ(id){let r=null;SECTIONS.forEach(sec=>sec.q.forEach(q=>{if(q.id===id)r=q;}));return r;}
 function render(){
   const sec=SECTIONS[step],total=SECTIONS.length,pct=Math.round(((step+1)/total)*100);
   root.innerHTML=`
@@ -199,6 +207,7 @@ function renderQ(q){
   else if(q.type==="longtext") body=`<textarea class="az-textarea" data-q="${q.id}" placeholder="Optional">${state[q.id]||""}</textarea>`;
   else if(q.type==="radio") body=q.opts.map(o=>`<div class="az-opt ${state[q.id]===o?"sel":""}" data-q="${q.id}" data-v="${o.replace(/"/g,'&quot;')}"><span class="az-dot"></span><span>${o}</span></div>`).join("");
   else if(q.type==="scale"){let b="";for(let i=q.min;i<=q.max;i++)b+=`<button type="button" class="az-sbtn ${String(state[q.id])===String(i)?"sel":""}" data-scale="${q.id}" data-v="${i}">${i}</button>`;body=`<div class="az-scale">${b}</div><div class="az-anchors"><span>${q.min} · ${q.low}</span><span>${q.max} · ${q.high}</span></div>`;}
+  else if(q.type==="checks"){const sel=Array.isArray(state[q.id])?state[q.id]:[];body=q.opts.map(o=>`<div class="az-chk ${sel.indexOf(o)>=0?'sel':''}" data-check="${q.id}" data-v="${o.replace(/"/g,'&quot;')}"><span class="box"></span><span>${o}</span></div>`).join("")+(q.max?`<div class="az-chkmax">Select up to ${q.max}.</div>`:"");}
   else if(q.type==="matrix") body=matrix(q.id,q.rows);
   return `<div class="az-q">${lbl}${body}<div class="az-hint" data-hint="${q.id}">Please answer this question.</div></div>`;
 }
@@ -233,6 +242,13 @@ function wire(){
     if(q==="q16") render();
   }));
 
+  root.querySelectorAll('.az-chk[data-check]').forEach(el=>el.addEventListener('click',e=>{
+    const c=e.currentTarget,q=c.dataset.check,v=c.dataset.v; let arr=Array.isArray(state[q])?state[q].slice():[];
+    const i=arr.indexOf(v); if(i>=0)arr.splice(i,1); else{const qq=findQ(q);const mx=qq&&qq.max;if(mx&&arr.length>=mx)return;arr.push(v);}
+    state[q]=arr; c.parentElement.querySelectorAll('.az-chk').forEach(b=>b.classList.toggle('sel',arr.indexOf(b.dataset.v)>=0));
+    clearHint(q); saveProgress();
+  }));
+
   root.querySelectorAll('.az-seg[data-seg]').forEach(el=>el.addEventListener('click',e=>{
     const c=e.currentTarget,key=c.dataset.seg; state[key]=c.dataset.v;
     c.parentElement.querySelectorAll('.az-seg').forEach(b=>{const ci=+b.dataset.v;b.classList.remove('sel');b.setAttribute('style',segStyle(ci,false));});
@@ -253,6 +269,7 @@ function validate(sec){
     if(!q.req)return;
     let a=true;
     if(q.type==="matrix")a=q.rows.every((r,ri)=>state[q.id+"::"+ri]!=null);
+    else if(q.type==="checks")a=Array.isArray(state[q.id])&&state[q.id].length>0;
     else a=state[q.id]!=null&&state[q.id]!=="";
     if(!a){ok=false;const h=root.querySelector(`[data-hint="${q.id}"]`);if(h)h.classList.add('show');}
   });
@@ -287,6 +304,7 @@ function buildPayload(){
     if(q.id==="q26"||q.id==="q27")return;
     if(q.showIf&&!q.showIf(state))return;
     if(q.type==="matrix"){q.rows.forEach((r,ri)=>{const idx=state[q.id+"::"+ri];answers[`Q${q.n} ${q.label} — ${r}`]=idx!=null?SCALE[+idx]:"";});}
+    else if(q.type==="checks"){answers[`Q${q.n} ${q.label}`]=Array.isArray(state[q.id])?state[q.id].join("; "):"";}
     else{answers[`Q${q.n} ${q.label}`]=state[q.id]??"";}
   }));
   return{token:TOKEN,hp:(document.getElementById('az_hp')?document.getElementById('az_hp').value:""),responseId:"R"+Date.now()+Math.floor(Math.random()*1000),surveyType:SURVEY_TYPE,wave:(WAVE_EFF||currentWave()),ts:new Date().toISOString(),responseDate:new Date().toISOString().slice(0,10),compound:state.q1||"",name:state.q26||"",unit:state.q27||"",answers};

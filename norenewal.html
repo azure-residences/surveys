@@ -144,6 +144,8 @@ const SECTIONS=[
  {n:2,title:"Overall & Recommendation",intro:"Please rate your overall experience.",q:[
    {id:"q4",n:4,type:"scale",min:0,max:10,low:"Very dissatisfied",high:"Very satisfied",req:true,label:"Overall, how would you rate your experience with Azure during your stay?"},
    {id:"q5",n:5,type:"scale",min:0,max:10,low:"Not at all likely",high:"Extremely likely",req:true,label:"How likely are you to recommend Azure to others?"},
+   {id:"q5b",n:"5b",type:"checks",req:false,max:2,label:"Which area(s) most affected your score? (up to 2)",opts:["Maintenance and repairs","Cleanliness of common areas","Customer service / staff responsiveness","Communication from management","Amenities and facilities","Security and safety","Value for money","Digital services (app / AI Concierge)","Other"],showIf:s=>s.q5!=null&&s.q5!==""&&Number(s.q5)<=8},
+   {id:"q5c",n:"5c",type:"longtext",req:false,label:"Anything else you'd like to share?",showIf:s=>s.q5!=null&&s.q5!==""&&Number(s.q5)<=8},
    {id:"q6",n:6,type:"longtext",req:false,label:"What is the one thing we should improve most? (Optional)"},
  ]},
  {n:3,title:"Resident Details",intro:"Your name and unit number are required so we can verify responses and follow up where needed. Identifying details are kept separate from your answers during analysis and are accessed only by Quality Management.",q:[
@@ -235,6 +237,7 @@ function wire(){
     const c=e.currentTarget,q=c.dataset.scale; state[q]=c.dataset.v;
     c.parentElement.querySelectorAll('.az-sbtn').forEach(b=>b.classList.remove('sel'));
     c.classList.add('sel'); clearHint(q); saveProgress();
+     if(q==="q5") render();
   }));
 
   root.querySelectorAll('.az-seg[data-seg]').forEach(el=>el.addEventListener('click',e=>{

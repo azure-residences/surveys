@@ -171,6 +171,8 @@ const SECTIONS=[
  ]},
  {n:6,title:"Your Voice",q:[
    {id:"q21",n:21,type:"scale",min:0,max:10,low:"Not at all likely",high:"Extremely likely",req:true,label:"How likely are you to recommend Azure to others?"},
+   {id:"q21b",n:"21b",type:"checks",req:false,max:2,label:"Which area(s) most affected your score? (up to 2)",opts:["Maintenance and repairs","Cleanliness of common areas","Customer service / staff responsiveness","Communication from management","Amenities and facilities","Security and safety","Value for money","Digital services (app / AI Concierge)","Other"],showIf:s=>s.q21!=null&&s.q21!==""&&Number(s.q21)<=8},
+   {id:"q21c",n:"21c",type:"longtext",req:false,label:"Anything else you'd like to share?",showIf:s=>s.q21!=null&&s.q21!==""&&Number(s.q21)<=8},
    {id:"q22",n:22,type:"radio",req:true,label:"Do you have a skill, hobby or small business you'd be willing to share with the community?",opts:["Yes — I'd love to get involved!","Maybe — I'd like to know more before committing","No, not for me right now"]},
    {id:"q23",n:23,sub:true,type:"text",req:false,label:"If you'd like us to reach out, leave your email or phone (optional)",ph:"Email or phone — optional",showIf:s=>s.q22==="Yes — I'd love to get involved!"||s.q22==="Maybe — I'd like to know more before committing"},
    {id:"q24",n:24,sub:true,type:"longtext",req:false,label:"Tell us what you do and how you'd like to be involved",showIf:s=>s.q22==="Yes — I'd love to get involved!"||s.q22==="Maybe — I'd like to know more before committing"},
@@ -262,6 +264,7 @@ function wire(){
     const c=e.currentTarget,q=c.dataset.scale; state[q]=c.dataset.v;
     c.parentElement.querySelectorAll('.az-sbtn').forEach(b=>b.classList.remove('sel'));
     c.classList.add('sel'); clearHint(q); saveProgress();
+     if(q==="q21") render();
   }));
 
   root.querySelectorAll('.az-seg[data-seg]').forEach(el=>el.addEventListener('click',e=>{
