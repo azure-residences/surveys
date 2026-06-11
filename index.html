@@ -270,7 +270,7 @@ function currentWave(){ const d=new Date();
   if(WAVE_MODE==="half") return d.getFullYear()+"-H"+(d.getMonth()<6?1:2);
   if(WAVE_MODE==="year") return "Events-"+d.getFullYear();
   return "Rolling"; }
-let OPEN_FROM_EFF=OPEN_FROM, OPEN_UNTIL_EFF=OPEN_UNTIL;
+let OPEN_FROM_EFF=OPEN_FROM, OPEN_UNTIL_EFF=OPEN_UNTIL, WAVE_EFF=null;
 function isOpen(){ const n=new Date();
   if(OPEN_FROM_EFF && n<new Date(OPEN_FROM_EFF+"T00:00:00")) return false;
   if(OPEN_UNTIL_EFF && n>new Date(OPEN_UNTIL_EFF+"T23:59:59")) return false;
@@ -289,7 +289,7 @@ function buildPayload(){
     if(q.type==="matrix"){q.rows.forEach((r,ri)=>{const idx=state[q.id+"::"+ri];answers[`Q${q.n} ${q.label} — ${r}`]=idx!=null?SCALE[+idx]:"";});}
     else{answers[`Q${q.n} ${q.label}`]=state[q.id]??"";}
   }));
-  return{token:TOKEN,hp:(document.getElementById('az_hp')?document.getElementById('az_hp').value:""),responseId:"R"+Date.now()+Math.floor(Math.random()*1000),surveyType:SURVEY_TYPE,wave:currentWave(),ts:new Date().toISOString(),responseDate:new Date().toISOString().slice(0,10),compound:state.q1||"",name:state.q26||"",unit:state.q27||"",answers};
+  return{token:TOKEN,hp:(document.getElementById('az_hp')?document.getElementById('az_hp').value:""),responseId:"R"+Date.now()+Math.floor(Math.random()*1000),surveyType:SURVEY_TYPE,wave:(WAVE_EFF||currentWave()),ts:new Date().toISOString(),responseDate:new Date().toISOString().slice(0,10),compound:state.q1||"",name:state.q26||"",unit:state.q27||"",answers};
 }
 
 async function submit(){
@@ -316,7 +316,7 @@ function __start(){ if(isOpen()) render(); else renderClosed(); }
   var started=false, go=function(){ if(started)return; started=true; __start(); };
   try{
     var cb='__cfg'+Math.random().toString(36).slice(2);
-    window[cb]=function(r){ try{ if(r&&r.ok){ OPEN_FROM_EFF=r.openFrom||null; OPEN_UNTIL_EFF=r.openUntil||null; } }catch(e){} try{delete window[cb];}catch(_){ } go(); };
+    window[cb]=function(r){ try{ if(r&&r.ok){ OPEN_FROM_EFF=r.openFrom||null; OPEN_UNTIL_EFF=r.openUntil||null; WAVE_EFF=(r.wave||null); } }catch(e){} try{delete window[cb];}catch(_){ } go(); };
     var sc=document.createElement('script');
     sc.src=ENDPOINT+'?config=1&survey='+encodeURIComponent(SURVEY_TYPE)+'&callback='+cb;
     sc.onerror=go; document.head.appendChild(sc);
