@@ -295,10 +295,30 @@ function validate(sec){
   return ok;
 }
 
+function firstIncompleteSection(){
+  for(let i=0;i<SECTIONS.length;i++){
+    const bad = visibleQs(SECTIONS[i]).some(q=>{
+      if(!q.req) return false;
+      if(q.type==="matrix") return !q.rows.every((r,ri)=>state[q.id+"::"+ri]!=null);
+      if(q.type==="checks") return !(Array.isArray(state[q.id]) && state[q.id].length>0);
+      return state[q.id]==null || state[q.id]==="";
+    });
+    if(bad) return i;
+  }
+  return -1;
+}
+
 function next(){
   const sec=SECTIONS[step];
   if(!validate(sec)){const f=root.querySelector('.az-hint.show');if(f)f.scrollIntoView({behavior:'smooth',block:'center'});return;}
-  if(step===SECTIONS.length-1){submit();return;}
+  if(step===SECTIONS.length-1){
+    const bad=firstIncompleteSection();
+    if(bad>=0){ step=bad; render(); validate(SECTIONS[bad]);
+      const f2=root.querySelector('.az-hint.show');
+      if(f2)f2.scrollIntoView({behavior:'smooth',block:'center'}); else scrollTop();
+      return; }
+    submit(); return;
+  }
   step++; saveProgress(); scrollTop(); render();
 }
 
