@@ -312,16 +312,118 @@ function buildPayload(){
   return{token:TOKEN,hp:(document.getElementById('az_hp')?document.getElementById('az_hp').value:""),responseId:"R"+Date.now()+Math.floor(Math.random()*1000),surveyType:SURVEY_TYPE,wave:currentWave(),ts:new Date().toISOString(),responseDate:new Date().toISOString().slice(0,10),compound:state.q1||"",name:state.q8||"",unit:state.q9||"",answers};
 }
 
+/* ============ SUBMISSION - hardened 28-07-2026 ============
+   The old version sent the request in opaque mode, so the server reply could
+   never be read. It then showed "Thank you" and wiped the local draft no
+   matter what happened - a failed submission left no trace anywhere.      */
+const PENDING_KEY  = SAVE_KEY + "_pending";
+const RETRY_DELAYS = [1000, 3000, 7000];
+
+function stashPending(p){ try{ localStorage.setItem(PENDING_KEY, JSON.stringify(p)); }catch(e){} }
+function clearPending(){ try{ localStorage.removeItem(PENDING_KEY); }catch(e){} }
+function azSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
+function setSubmitting(on, label){
+  const btn=document.getElementById('nextBtn');
+  if(!btn) return;
+  btn.disabled = !!on;
+  if(on) btn.textContent = label || "Submitting…";
+  btn.style.opacity = on ? "0.65" : "";
+  btn.style.cursor  = on ? "default" : "";
+}
+
+async function postOnce(payload){
+  /* text/plain keeps this a "simple request" so no CORS preflight is sent -
+     Apps Script cannot answer a preflight OPTIONS call. */
+  const r = await fetch(ENDPOINT, {
+    method:"POST",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body:JSON.stringify(payload)
+  });
+  if(!r.ok) throw new Error("HTTP " + r.status);
+  return await r.json();
+}
+
+async function sendWithRetry(payload, onAttempt){
+  let attempts = 0, lastErr = "network error";
+  for(let a = 0; a <= RETRY_DELAYS.length; a++){
+    attempts = a + 1;
+    if(onAttempt) onAttempt(attempts);
+    try{
+      const res = await postOnce(payload);
+      if(res && res.ok) return {ok:true, attempts:attempts, res:res};
+      lastErr = (res && res.error) || "server rejected";
+      /* permanent rejections are not worth retrying */
+      if(res && res.retry === false){
+        return {ok:false, attempts:attempts, error:lastErr, permanent:true};
+      }
+    }catch(err){
+      lastErr = String(err && err.message ? err.message : err);
+    }
+    if(a < RETRY_DELAYS.length) await azSleep(RETRY_DELAYS[a]);
+  }
+  return {ok:false, attempts:attempts, error:lastErr, permanent:false};
+}
+
 async function submit(){
   if(_sending)return; _sending=true;
-  const btn=document.getElementById('nextBtn');
-  if(btn){btn.disabled=true;btn.textContent="Submitting…";btn.style.opacity="0.65";btn.style.cursor="default";}
-  const payload=buildPayload();
-  if(ENDPOINT&&ENDPOINT.indexOf("PASTE_")===-1){
-    try{await fetch(ENDPOINT,{method:"POST",mode:"no-cors",body:JSON.stringify(payload)});}
-    catch(err){console.error("Submit error",err);}
+  setSubmitting(true);
+  /* built ONCE - the Response ID must stay identical across retries so the
+     server can recognise a repeat and refuse to write it twice. */
+  const payload = buildPayload();
+  stashPending(payload);
+
+  if(!ENDPOINT || ENDPOINT.indexOf("PASTE_") !== -1){
+    clearPending(); clearProgress(); success(); return;
   }
-  clearProgress(); success();
+
+  const out = await sendWithRetry(payload, function(n){
+    setSubmitting(true, n === 1
+      ? "Submitting…"
+      : "Retrying… (" + n + "/" + (RETRY_DELAYS.length + 1) + ")");
+  });
+
+  if(out.ok){ clearPending(); clearProgress(); success(); return; }
+
+  _sending = false;
+  setSubmitting(false);
+  failure(payload, out);
+}
+
+function failure(payload, out){
+  const card = root.querySelector('.az-card');
+  if(!card) return;
+  card.innerHTML =
+    '<div class="az-done">' +
+      '<div class="az-check" style="background:linear-gradient(135deg,#e08a7a,#c0392b);box-shadow:0 14px 30px -10px rgba(192,57,43,.5);">' +
+        '<svg viewBox="0 0 24 24" stroke-linecap="round"><line x1="12" y1="6.5" x2="12" y2="13.5"/><line x1="12" y1="17.6" x2="12" y2="17.7"/></svg>' +
+      '</div>' +
+      '<h2 style="color:#c0392b;">We could not save your answers</h2>' +
+      '<p>Your answers are still on this device \u2014 nothing has been lost. Please press the button below to try again.<br>' +
+      'If it still fails, close this page and open the same link again later. Your answers will be sent automatically.</p>' +
+      '<p style="margin-top:20px;font-size:11.5px;color:var(--az-muted);">Reference: ' +
+        (payload.responseId || '-') + ' \u00b7 attempts: ' + out.attempts + ' \u00b7 ' + String(out.error || '') + '</p>' +
+      '<button id="azRetryBtn" style="margin-top:22px;background:var(--az-dark);color:#fff;border:0;border-radius:8px;padding:13px 32px;font-size:15px;font-weight:600;cursor:pointer;">Try again</button>' +
+    '</div>';
+  const b = document.getElementById('azRetryBtn');
+  if(b) b.onclick = async function(){
+    b.disabled = true; b.textContent = "Sending\u2026"; b.style.opacity = "0.65";
+    const again = await sendWithRetry(payload);
+    if(again.ok){ clearPending(); clearProgress(); success(); }
+    else failure(payload, again);
+  };
+  scrollTop();
+}
+
+/* If the resident closed the page on a failure, resend on next open.
+   The server refuses duplicates, so this is safe to run every time. */
+async function flushPending(){
+  let pend = null;
+  try{ const r = localStorage.getItem(PENDING_KEY); if(r) pend = JSON.parse(r); }catch(e){}
+  if(!pend || !pend.responseId) return;
+  if(!ENDPOINT || ENDPOINT.indexOf("PASTE_") !== -1) return;
+  const out = await sendWithRetry(pend);
+  if(out.ok){ clearPending(); clearProgress(); success(); }
 }
 
 function success(){
@@ -331,5 +433,6 @@ function success(){
 
 try{ loadProgress(); }catch(e){}
 if(isOpen()) render(); else renderClosed();
+try{ flushPending(); }catch(e){}
 </script>
 <input id="az_hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;">
