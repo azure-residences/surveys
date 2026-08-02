@@ -243,9 +243,9 @@ function renderBoard(innerOnly){
 function renderSignin(msg,busy){
   root.innerHTML=`<div class="az-stage"><div class="az-shell">
     <div class="az-brandbar"><img class="az-logoimg" src="${LOGO}" alt="Azure">
-      <div class="az-brandtext"><div class="t">Resident Onboarding Standard Project</div>
-      <div class="s">Compound assessment</div></div>
-      <div class="az-ribbon">Internal · Compound Assessment</div></div>
+      <div class="az-brandtext"><div class="t">Quality Assurance</div>
+      <div class="s">Resident Onboarding Standard Project</div></div>
+      <div class="az-ribbon">Internal · Quality Assurance</div></div>
     <div class="az-card">
       <div class="az-hero"><div class="az-kicker">Sign in</div>
         <h1>Compound Assessment</h1>
@@ -259,7 +259,7 @@ function renderSignin(msg,busy){
         <div id="az_hint" style="font-size:12.5px;color:#c0392b;margin-top:12px">${msg||''}</div>
       </div>
     </div>
-    <div class="az-foot"><b>Azure Community Management</b> — Riyadh, Saudi Arabia</div>
+    <div class="az-foot"><b>Azure · Quality Assurance</b> — Riyadh, Saudi Arabia</div>
   </div></div>`;
   const inp=document.getElementById('az_pin');
   const go=()=>trySignin(inp.value);
@@ -346,9 +346,9 @@ function render(keep){
   }
   root.innerHTML=`<div class="az-stage"><div class="az-shell">
     <div class="az-brandbar"><img class="az-logoimg" src="${LOGO}" alt="Azure">
-      <div class="az-brandtext"><div class="t">Resident Onboarding Standard Project</div>
-      <div class="s">Compound assessment</div></div>
-      <div class="az-ribbon">Internal · Compound Assessment</div></div>
+      <div class="az-brandtext"><div class="t">Quality Assurance</div>
+      <div class="s">Resident Onboarding Standard Project</div></div>
+      <div class="az-ribbon">Internal · Quality Assurance</div></div>
     <div class="az-card">
       <div class="az-hero"><div class="az-kicker">Section ${sec.n} of ${SECTIONS.length}</div>
         <h1>${esc(sec.title)}</h1>${sec.intro?`<p>${esc(sec.intro)}</p>`:''}</div>
@@ -362,7 +362,7 @@ function render(keep){
         <div id="az_hint" style="font-size:12.5px;color:#c0392b;margin-top:10px"></div>
       </div>
     </div>
-    <div class="az-foot"><b>Azure Community Management</b> \u2014 Riyadh, Saudi Arabia
+    <div class="az-foot"><b>Azure \u00b7 Quality Assurance</b> \u2014 Riyadh, Saudi Arabia
       ${auth&&auth.compound?`<div style="margin-top:8px"><button class="az-signout" id="az_out2">Sign out</button></div>`:''}
     </div>
   </div></div>`;
@@ -589,7 +589,7 @@ async function submit(){
   clearProgress();
   root.querySelector('.az-card').innerHTML=
     `<div class="az-done"><div class="az-check"><svg viewBox="0 0 24 24"><polyline points="4 12.5 9.5 18 20 6.5"/></svg></div>
-     <h2>Thank you</h2><p>Your answers have been recorded${auth&&auth.compound?(' for '+esc(auth.compound)):''}. Please email the materials you ticked to Majed. If anything needs following up, we will contact you.</p>
+     <h2>Thank you</h2><p>Your answers have been recorded${auth&&auth.compound?(' for '+esc(auth.compound)):''}. Please email the materials you ticked to Majed Al-Masmoum, Quality Assurance. If anything needs following up, we will contact you.</p>
      <button class="az-next" id="az_done_out" style="max-width:280px;width:100%;margin-top:6px">Start another compound</button></div>`;
   const dob=document.getElementById('az_done_out');
   if(dob)dob.onclick=function(){
