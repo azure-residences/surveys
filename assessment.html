@@ -280,9 +280,26 @@ function signOut(){
 
 function trySignin(pin){
   pin=(pin||'').trim();
-  if(!pin){ renderSignin('Please enter your access code.'); return; }
+  if(!pin){
+    const h=document.getElementById('az_hint');
+    if(h)h.textContent='Please enter your access code.';
+    const i=document.getElementById('az_pin'); if(i)i.focus();
+    return;
+  }
   if(signinBusy)return; signinBusy=true;
-  renderSignin('',true);
+  const inpEl=document.getElementById('az_pin');
+  const btnEl=document.getElementById('az_signin');
+  const hintEl=document.getElementById('az_hint');
+  if(hintEl)hintEl.textContent='';
+  if(inpEl){inpEl.disabled=true;inpEl.style.opacity='.7';}
+  if(btnEl){btnEl.disabled=true;btnEl.textContent='Checking\u2026';btnEl.style.opacity='.65';}
+  const release=function(msg){
+    signinBusy=false;
+    if(inpEl){inpEl.disabled=false;inpEl.style.opacity='';}
+    if(btnEl){btnEl.disabled=false;btnEl.textContent='Continue';btnEl.style.opacity='';}
+    if(hintEl)hintEl.textContent=msg||'';
+    if(inpEl){inpEl.focus();inpEl.select();}
+  };
   const cb='azcb'+Date.now();
   const done=function(res){
     signinBusy=false;
@@ -291,18 +308,18 @@ function trySignin(pin){
       auth={compound:res.compound,code:res.code,manager:res.manager,password:pin};
       step=0; saveProgress(); render();
     } else {
-      renderSignin('That code was not recognised. Please check and try again.');
+      release('That code was not recognised. Please check and try again.');
     }
   };
   window[cb]=done;
   const sc=document.createElement('script');
   sc.src=ENDPOINT+'?action=signin&token='+encodeURIComponent(TOKEN)
         +'&password='+encodeURIComponent(pin)+'&callback='+cb;
-  sc.onerror=function(){ signinBusy=false; delete window[cb];
-    renderSignin('Could not reach the server. Please check your connection and try again.'); };
+  sc.onerror=function(){ delete window[cb];
+    release('Could not reach the server. Please check your connection and try again.'); };
   document.body.appendChild(sc);
-  setTimeout(function(){ if(window[cb]){ signinBusy=false; delete window[cb];
-    renderSignin('The server did not respond. Please try again.'); } },15000);
+  setTimeout(function(){ if(window[cb]){ delete window[cb];
+    release('The server did not respond. Please try again.'); } },15000);
 }
 
 function render(keep){
