@@ -132,7 +132,7 @@ const SECTIONS=[
    {id:"q1",n:1,type:"select",req:true,label:"Which Azure compound did you move into?",opts:COMPOUNDS},
    {id:"q2",n:2,type:"matrix",req:true,label:"Please rate your move-in experience",rows:["Experience with the Leasing team during move-in","Clarity of communication before and during move-in"]},
    {id:"q3",n:3,type:"matrix",req:true,scale:READY_SCALE,label:"How ready was your unit at handover, in each of these areas?",rows:["Maintenance & repairs (AC, plumbing, fixtures)","Cleanliness","IT & connectivity (internet, smart-home)","Access & onboarding items (cards, parking, registrations)"]},
-   {id:"q3b",n:3,sub:true,type:"longtext",req:false,label:"What was delayed or not ready? (Optional — helps us fix it)",showIf:s=>["q3::0","q3::1","q3::2","q3::3"].some(k=>s[k]==="1"||s[k]==="2")},
+   {id:"q3b",n:3,sub:true,type:"longtext",req:false,label:"What was delayed or not ready? (Optional, helps us fix it)",key:"What was delayed or not ready? (Optional — helps us fix it)",showIf:s=>["q3::0","q3::1","q3::2","q3::3"].some(k=>s[k]==="1"||s[k]==="2")},
  ]},
  {n:2,title:"Overall Experience",q:[
    {id:"q4",n:4,type:"scale",min:0,max:10,low:"Not at all satisfied",high:"Extremely satisfied",req:true,label:"Overall, how satisfied are you with your move-in and onboarding experience?"},
@@ -176,7 +176,7 @@ function render(){
          <div class="az-actions"><button class="az-back" id="backBtn" ${step===0?"hidden":""}>← Back</button><button class="az-next" id="nextBtn">${step===total-1?"Submit":"Next →"}</button></div>
        </div>
      </div>
-     <div class="az-foot"><b>Azure Community Management</b> — Riyadh, Saudi Arabia<br>Handled in line with Azure's privacy standards.</div>
+     <div class="az-foot"><b>Azure Community Management</b> · Riyadh, Saudi Arabia<br>Handled in line with Azure's privacy standards.</div>
    </div></div>`;
   wire();
 }
@@ -184,7 +184,7 @@ function render(){
 function renderQ(q){
   const lbl=`<label class="az-qlabel">${q.sub?'':`<span class="az-qnum">${q.n}.</span>`}${q.label}${q.req?'<span class="az-req">*</span>':''}</label>`;
   let body="";
-  if(q.type==="select") body=`<select class="az-select" data-q="${q.id}"><option value="">— Select —</option>${q.opts.map(o=>`<option ${state[q.id]===o?"selected":""}>${o}</option>`).join("")}</select>`;
+  if(q.type==="select") body=`<select class="az-select" data-q="${q.id}"><option value="">Select…</option>${q.opts.map(o=>`<option ${state[q.id]===o?"selected":""}>${o}</option>`).join("")}</select>`;
   else if(q.type==="text") body=`<input class="az-input" data-q="${q.id}" value="${(state[q.id]||"").replace(/"/g,'&quot;')}" placeholder="${q.ph||""}">`;
   else if(q.type==="longtext") body=`<textarea class="az-textarea" data-q="${q.id}" placeholder="Optional">${state[q.id]||""}</textarea>`;
   else if(q.type==="radio") body=q.opts.map(o=>`<div class="az-opt ${state[q.id]===o?"sel":""}" data-q="${q.id}" data-v="${o.replace(/"/g,'&quot;')}"><span class="az-dot"></span><span>${o}</span></div>`).join("");
@@ -298,16 +298,16 @@ function renderClosed(){ root.innerHTML=`
    <div class="az-stage"><div class="az-shell">
      <div class="az-brandbar"><img class="az-logoimg" src="${LOGO}" alt="Azure"><div class="az-brandtext"><div class="t">${SURVEY_TYPE}</div><div class="s">Azure Community Management</div></div></div>
      <div class="az-card"><div class="az-hero"><h1>This survey is currently closed</h1><p>Thank you for your interest. This survey isn't accepting responses at the moment. Please check back later.</p></div></div>
-     <div class="az-foot"><b>Azure Community Management</b> — Riyadh, Saudi Arabia</div>
+     <div class="az-foot"><b>Azure Community Management</b> · Riyadh, Saudi Arabia</div>
    </div></div>`; }
 function buildPayload(){
   const answers={};
   SECTIONS.forEach(sec=>sec.q.forEach(q=>{
     if(q.id==="q8"||q.id==="q9")return;
     if(q.showIf&&!q.showIf(state))return;
-    if(q.type==="matrix"){const sc=q.scale||SCALE;q.rows.forEach((r,ri)=>{const idx=state[q.id+"::"+ri];answers[`Q${q.n} ${q.label} — ${r}`]=idx!=null?sc[+idx]:"";});}
-    else if(q.type==="checks"){answers[`Q${q.n} ${q.label}`]=Array.isArray(state[q.id])?state[q.id].join("; "):"";}
-    else{answers[`Q${q.n} ${q.label}`]=state[q.id]??"";}
+    if(q.type==="matrix"){const sc=q.scale||SCALE;q.rows.forEach((r,ri)=>{const idx=state[q.id+"::"+ri];answers[`Q${q.n} ${q.key||q.label} — ${r}`]=idx!=null?sc[+idx]:"";});}
+    else if(q.type==="checks"){answers[`Q${q.n} ${q.key||q.label}`]=Array.isArray(state[q.id])?state[q.id].join("; "):"";}
+    else{answers[`Q${q.n} ${q.key||q.label}`]=state[q.id]??"";}
   }));
   return{token:TOKEN,hp:(document.getElementById('az_hp')?document.getElementById('az_hp').value:""),responseId:"R"+Date.now()+Math.floor(Math.random()*1000),surveyType:SURVEY_TYPE,wave:currentWave(),ts:new Date().toISOString(),responseDate:new Date().toISOString().slice(0,10),compound:state.q1||"",name:state.q8||"",unit:state.q9||"",answers};
 }
@@ -426,13 +426,49 @@ async function flushPending(){
   if(out.ok){ clearPending(); clearProgress(); success(); }
 }
 
+/* ====== ALREADY SUBMITTED (added 30-10-2026) ======
+   After a successful submission this device remembers it for 30 days. If the survey is
+   opened again, the resident sees a short note first instead of a blank form, which
+   prevents the same answers being sent twice. They can still choose to submit again. */
+const DONE_KEY = SAVE_KEY + "_done";
+const DONE_DAYS = 30;
+function markDone(){ try{ localStorage.setItem(DONE_KEY, JSON.stringify({at: Date.now()})); }catch(e){} }
+function doneAt(){
+  try{
+    const r = JSON.parse(localStorage.getItem(DONE_KEY) || "null");
+    if(r && r.at && Date.now() - r.at < DONE_DAYS * 86400000) return new Date(r.at);
+  }catch(e){}
+  return null;
+}
+function hasDraft(){ try{ return !!localStorage.getItem(SAVE_KEY) || !!localStorage.getItem(PENDING_KEY); }catch(e){ return false; } }
+function renderAlreadyDone(d){
+  const when = d.toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'});
+  root.innerHTML=`
+   <div class="az-stage"><div class="az-shell">
+     <div class="az-brandbar"><img class="az-logoimg" src="${LOGO}" alt="Azure"><div class="az-brandtext"><div class="t">${SURVEY_TYPE}</div><div class="s">Azure Community Management</div></div></div>
+     <div class="az-card"><div class="az-done">
+       <div class="az-check"><svg viewBox="0 0 24 24"><polyline points="4 12.5 9.5 18 20 6.5"/></svg></div>
+       <h2>You have already shared your feedback</h2>
+       <p>We received your response from this device on ${when}. Thank you, there is no need to submit it again.</p>
+       <p style="margin-top:14px;font-size:13px;color:var(--az-muted);">Answering for a different unit, or want to add something?</p>
+       <button id="azAgainBtn" style="margin-top:10px;background:transparent;color:var(--az-dark);border:1.5px solid var(--az-dark);border-radius:8px;padding:11px 26px;font-size:14px;font-weight:600;cursor:pointer;">Submit a new response</button>
+     </div></div>
+     <div class="az-foot"><b>Azure Community Management</b> · Riyadh, Saudi Arabia</div>
+   </div></div>`;
+  const b = document.getElementById('azAgainBtn');
+  if(b) b.onclick = function(){ render(); };
+}
+
 function success(){
-  root.querySelector('.az-card').innerHTML=`<div class="az-done"><div class="az-check"><svg viewBox="0 0 24 24"><polyline points="4 12.5 9.5 18 20 6.5"/></svg></div><h2>Thank you</h2><p>Your feedback has been submitted. Azure management will review it and use it to drive real improvements — shared back with residents through a “You said – We did” update.</p></div>`;
+  markDone();
+  root.querySelector('.az-card').innerHTML=`<div class="az-done"><div class="az-check"><svg viewBox="0 0 24 24"><polyline points="4 12.5 9.5 18 20 6.5"/></svg></div><h2>Thank you</h2><p>Your feedback has been submitted. Azure management will review it and use it to drive real improvements, shared back with residents through a “You said, We did” update.</p></div>`;
   scrollTop();
 }
 
 try{ loadProgress(); }catch(e){}
-if(isOpen()) render(); else renderClosed();
+if(!isOpen()) renderClosed();
+else if(doneAt() && !hasDraft()) renderAlreadyDone(doneAt());
+else render();
 try{ flushPending(); }catch(e){}
 </script>
 <input id="az_hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;">
