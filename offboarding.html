@@ -162,6 +162,7 @@ const S_SEL =["#3f9d57","#c9932f","#c0492e"];
 const S_HINT="For each step, choose whether it follows a written Azure procedure, your own practice, or does not happen. If written, give the name of the document.";
 
 const CARDS=["Non-renewal notice recorded in Yardi", "Non-renewal survey sent to the resident", "Leasing informs the compound", "Attempt made to keep the resident", "Unit shown to new prospects during the notice period", "Pre-move-out inspection with the resident", "Move-out date and time confirmed with the resident", "Departments notified of the move-out", "Security notified of the move-out", "Final inspection carried out", "Meter readings taken", "Resident signs the move-out inspection", "Keys, access cards and stickers collected", "Access deactivated", "Resident removed from My Community and WhatsApp group", "Inspection records uploaded to Yardi", "Unit status changed in Yardi", "Ejar contract closed", "Damage assessed and costed", "Repair work order raised", "Readiness date set for the next resident", "Unit deep cleaned", "Final charges agreed", "Settlement statement sent to the resident", "Deposit refunded", "Move-out survey sent one week after move-out"];
+const AUTO=["Non-renewal survey sent to the resident"];
 const DROPPED=["Reason for leaving asked and recorded", "Exit survey sent to the resident"];
 const CAT={"Non-renewal notice recorded in Yardi": "Leasing", "Non-renewal survey sent to the resident": "Systems", "Leasing informs the compound": "Leasing", "Attempt made to keep the resident": "Compound", "Unit shown to new prospects during the notice period": "Leasing", "Pre-move-out inspection with the resident": "Compound", "Move-out date and time confirmed with the resident": "Compound", "Departments notified of the move-out": "Compound", "Security notified of the move-out": "Security", "Final inspection carried out": "Compound", "Meter readings taken": "Maintenance", "Resident signs the move-out inspection": "Resident", "Keys, access cards and stickers collected": "Security", "Access deactivated": "Security", "Resident removed from My Community and WhatsApp group": "Systems", "Inspection records uploaded to Yardi": "Systems", "Unit status changed in Yardi": "Systems", "Ejar contract closed": "Leasing", "Damage assessed and costed": "Maintenance", "Repair work order raised": "Maintenance", "Readiness date set for the next resident": "Compound", "Unit deep cleaned": "Housekeeping", "Final charges agreed": "Finance", "Settlement statement sent to the resident": "Finance", "Deposit refunded": "Finance", "Move-out survey sent one week after move-out": "Systems"};
 const CATC={"Leasing": ["#F3EDF9", "#D9C7EA", "#6B4A8C"], "Compound": ["#EAF3F8", "#C3DCEA", "#004E73"], "Resident": ["#FBF4EC", "#EAD9C2", "#8A6A3C"], "Security": ["#FAECEC", "#E9C9C9", "#8C3A3A"], "Maintenance": ["#FDF3E9", "#F0D9BE", "#9A5F1F"], "Housekeeping": ["#EDF7EF", "#C9E4CE", "#2F6B3D"], "Finance": ["#EEF3EF", "#C9D6CB", "#3E5B45"], "Systems": ["#F1F2F4", "#D5D9DE", "#4A5560"]};
@@ -226,12 +227,12 @@ function renderBoard(innerOnly){
     return `<div class="az-card-item" draggable="true" data-z="seq" style="background:${s.bg};border-color:${s.bd}" data-seq="${i}">
       <div class="grip">\u2630</div>
       <div class="no" style="background:${s.tx}">${i+1}</div>
-      <div class="tx">${esc(c)}${s.cat?`<span class="cat" style="color:${s.tx}">${s.cat}</span>`:''}</div>
+      <div class="tx">${esc(c)}${s.cat?`<span class="cat" style="color:${s.tx}">${s.cat}${AUTO.indexOf(c)>=0?' \u00b7 Automatic, by the system':''}</span>`:''}</div>
       <div class="az-mv"><button data-up="${i}">\u2191</button><button data-dn="${i}">\u2193</button><button data-rm="${i}">\u00d7</button></div></div>`;}).join('');
   const un=board.unused.map((c,i)=>{const s=cs(c);
     return `<div class="az-card-item" draggable="true" data-z="un" style="opacity:.62;background:${s.bg};border-color:${s.bd}" data-un="${i}">
       <div class="grip">\u2630</div>
-      <div class="tx">${esc(c)}${s.cat?`<span class="cat" style="color:${s.tx}">${s.cat}</span>`:''}</div>
+      <div class="tx">${esc(c)}${s.cat?`<span class="cat" style="color:${s.tx}">${s.cat}${AUTO.indexOf(c)>=0?' \u00b7 Automatic, by the system':''}</span>`:''}</div>
       <div class="az-mv"><button data-add="${i}">+</button></div></div>`;}).join('');
   const lg=Object.keys(CATC).map(k=>{const v=CATC[k];
     return `<span class="az-lg" style="background:${v[0]};border-color:${v[1]};color:${v[2]}">${k}</span>`;}).join('');
