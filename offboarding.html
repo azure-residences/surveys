@@ -159,8 +159,7 @@ const S_IDLE=["#eef7ef","#eaf3f8","#fdf6ec","#fcebe7"];
 const S_BORD=["#cfe8d2","#c3dcea","#f3e3c4","#f1cabf"];
 const S_TXT =["#3f7a4a","#004E73","#9a6b1f","#b14a32"];
 const S_SEL =["#3f9d57","#004E73","#c9932f","#c0492e"];
-const S_HINT="For each step, choose whether it follows a written Azure procedure, is done through the system (Yardi), follows your own practice, or does not happen. For a written procedure, give its name; for the system, say where in Yardi.";
-const DOC_PH=["Name of the written procedure or form","Where in Yardi (screen or workflow)"];
+const S_HINT="For each step, choose whether it follows a written Azure procedure, is done through the system (Yardi), follows your own practice, or does not happen. If written, give the name of the document.";
 
 const CARDS=["Resident submits non-renewal notice in the system (Current to Notice)", "Non-renewal survey sent to the resident", "Leasing informs the compound", "Attempt made to keep the resident", "Pre-move-out visit with the resident (before move-out day, to agree what needs fixing)", "Move-out date and time confirmed with the resident", "Departments notified of the move-out", "Security notified of the move-out", "Final inspection carried out", "Meter readings taken", "Resident signs the move-out inspection", "Keys, access cards and stickers collected", "Access deactivated", "Resident removed from My Community and WhatsApp group", "Inspection records uploaded to Yardi", "Unit status changed in Yardi", "Ejar contract closed", "Damage assessed and costed", "Repair work order raised", "Readiness date set for the next resident", "Unit deep cleaned", "Final charges agreed", "Settlement statement sent to the resident", "Deposit refunded", "Move-out survey sent one week after move-out"];
 const AUTO=["Resident submits non-renewal notice in the system (Current to Notice)", "Non-renewal survey sent to the resident"];
@@ -199,8 +198,8 @@ function renderQ(q){
       `<div class="az-st" data-st="${q.id}" data-i="${i}" style="${stStyle(i,String(cur)===String(i))}">${s}</div>`).join('');
     return `<div class="az-q">${lbl}
       <div class="az-status">${btns}</div>
-      <input class="az-input" data-id="${q.id}::doc" data-doc="${q.id}" placeholder="${DOC_PH[+cur]||DOC_PH[0]}"
-        value="${esc(state[q.id+'::doc']||'')}" style="margin-bottom:9px;${(String(cur)==='0'||String(cur)==='1')?'':'display:none'}">
+      <input class="az-input" data-id="${q.id}::doc" data-doc="${q.id}" placeholder="Name of the written procedure or form"
+        value="${esc(state[q.id+'::doc']||'')}" style="margin-bottom:9px;${String(cur)==='0'?'':'display:none'}">
       <textarea class="az-textarea" data-id="${q.id}" placeholder="${esc(q.ph||'Describe what happens today')}">${esc(state[q.id]||'')}</textarea>
     </div>`;
   }
@@ -525,7 +524,7 @@ function wire(){
       root.querySelectorAll('[data-st="'+id+'"]').forEach(x=>{
         x.setAttribute('style', stStyle(+x.dataset.i, x.dataset.i===i));
       });
-      const d=root.querySelector('[data-doc="'+id+'"]'); if(d){ d.style.display=(i==='0'||i==='1')?'':'none'; if(DOC_PH[+i]) d.placeholder=DOC_PH[+i]; }
+      const d=root.querySelector('[data-doc="'+id+'"]'); if(d) d.style.display=(i==='0')?'':'none';
     };
   });
   root.querySelectorAll('[data-chk]').forEach(el=>{
@@ -549,7 +548,6 @@ function validate(){
     if(q.type==="status"){
       if(state[q.id+"::st"]==null) return "Please choose an option for: "+q.label;
       if(String(state[q.id+"::st"])==="0"&&!(state[q.id+"::doc"]||"").trim()) return "Please give the name of the written procedure for: "+q.label;
-      if(String(state[q.id+"::st"])==="1"&&!(state[q.id+"::doc"]||"").trim()) return "Please say where in Yardi this is done for: "+q.label;
       if(String(state[q.id+"::st"])!=="3"&&!(state[q.id]||"").trim()) return "Please describe what happens for: "+q.label;
     } else if(q.type==="checks"){
       if(!Array.isArray(state[q.id])||!state[q.id].length) return "Please tick at least one option, or None of these.";
@@ -579,7 +577,7 @@ function buildPayload(){
     if(q.type==="status"){
       const i=state[q.id+"::st"];
       answers[q.id+" | status"]=i!=null?STATUS[+i]:"";
-      answers[q.id+" | document"]=(String(i)==="0"||String(i)==="1")?(state[q.id+"::doc"]||""):"";
+      answers[q.id+" | document"]=String(i)==="0"?(state[q.id+"::doc"]||""):"";
       answers[q.id+" | answer"]=state[q.id]||"";
     } else if(q.type==="checks"){
       answers[q.id]=Array.isArray(state[q.id])?state[q.id].join("; "):"";
