@@ -548,7 +548,7 @@ function validate(){
     if(q.type==="status"){
       if(state[q.id+"::st"]==null) return "Please choose an option for: "+q.label;
       if(String(state[q.id+"::st"])==="0"&&!(state[q.id+"::doc"]||"").trim()) return "Please give the name of the written procedure for: "+q.label;
-      if(String(state[q.id+"::st"])!=="3"&&!(state[q.id]||"").trim()) return "Please describe what happens for: "+q.label;
+      if((String(state[q.id+"::st"])==="0"||String(state[q.id+"::st"])==="2")&&!(state[q.id]||"").trim()) return "Please describe what happens for: "+q.label;
     } else if(q.type==="checks"){
       if(!Array.isArray(state[q.id])||!state[q.id].length) return "Please tick at least one option, or None of these.";
     } else if(!(state[q.id]||"").trim()) return "Please answer: "+q.label;
