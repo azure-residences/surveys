@@ -560,6 +560,12 @@ function next(){
   const err=validate();
   const h=document.getElementById('az_hint');
   if(err){ if(h)h.textContent=err; return; }
+  const sec=SECTIONS[step];
+  if(sec.board&&board.unused.length>board.seq.length&&window._boardOk!==board.seq.length){
+    window._boardOk=board.seq.length;
+    if(h)h.textContent="You have placed "+board.seq.length+" steps. The other "+board.unused.length+" will be recorded as not done at your compound. If some of them do happen, please place them. Otherwise, tap Continue again to confirm.";
+    return;
+  }
   if(step===SECTIONS.length-1){submit();return;}
   step++; saveProgress(); render();
 }
