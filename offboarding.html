@@ -233,11 +233,11 @@ function renderBoard(innerOnly){
   const seq=board.seq.map((c,i)=>{const s=cs(c);
     if(isFixed(c)) return `<div class="az-card-item az-fixed" data-z="seq" style="background:${s.bg};border-color:${s.bd};border-style:dashed" data-seq="${i}">
       <div class="grip" style="visibility:hidden">\u2630</div>
-      <div class="no" style="background:${s.tx}">${i+1}</div>
+      <div class="no" style="background:${s.tx};font-size:12px">\u{1F512}</div>
       <div class="tx">${esc(c)}<span class="cat" style="color:${s.tx}">${s.cat} \u00b7 Fixed: done by another department${AUTO.indexOf(c)>=0?', automatically':''}</span></div></div>`;
     return `<div class="az-card-item" draggable="true" data-z="seq" style="background:${s.bg};border-color:${s.bd}" data-seq="${i}">
       <div class="grip">\u2630</div>
-      <div class="no" style="background:${s.tx}">${i+1}</div>
+      <div class="no" style="background:${s.tx}">${board.seq.slice(0,i+1).filter(function(x){return !isFixed(x);}).length}</div>
       <div class="tx">${esc(c)}${s.cat?`<span class="cat" style="color:${s.tx}">${s.cat}${AUTO.indexOf(c)>=0?' \u00b7 Automatic, by the system':''}</span>`:''}</div>
       <div class="az-mv"><button data-up="${i}">\u2191</button><button data-dn="${i}">\u2193</button><button data-rm="${i}">\u00d7</button></div></div>`;}).join('');
   const un=board.unused.map((c,i)=>{const s=cs(c);
@@ -248,7 +248,7 @@ function renderBoard(innerOnly){
   const lg=Object.keys(CATC).map(k=>{const v=CATC[k];
     return `<span class="az-lg" style="background:${v[0]};border-color:${v[1]};color:${v[2]}">${k}</span>`;}).join('');
   const inner=`<div class="az-legend">${lg}</div>
-    <div class="az-bl">Steps at your compound, in order <span>${board.seq.length}</span></div>
+    <div class="az-bl">Steps at your compound, in order <span>${board.seq.filter(function(x){return !isFixed(x);}).length}</span></div>
     <div class="az-zone ${board.seq.length?'used':''}" id="zone_seq" data-zone="seq">${seq||'<div style="font-size:12.5px;color:#8a99a1;padding:6px">Tap + on the steps you do in the box below, then put them in order</div>'}</div>
     <div class="az-bl">Steps not placed: recorded as not done <span>${board.unused.length}</span></div>
     <div class="az-zone" id="zone_un" data-zone="un">${un||'<div style="font-size:12.5px;color:#8a99a1;padding:6px">All steps have been placed</div>'}</div>
